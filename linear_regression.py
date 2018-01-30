@@ -2,7 +2,6 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import time
 
 def linear_regression_cost_function(x, theta, y):
     m = x.shape[0]
@@ -16,14 +15,14 @@ def linear_regression_gradient(x, theta, y):
     grad = 1.0 / m * np.matmul(x.T, h - y)
     return grad
 
-def gradient_descent(x_train, y_train, x_val, y_val, theta_0, alpha = 0.005, max_iterations = 50000):
+def gradient_descent(x_train, y_train, x_val, y_val, theta_0, alpha = 0.005, max_iterations = 50000, early_stop = True):
     cost_history = np.zeros((max_iterations, 2))
     theta = theta_0
     for i in range(max_iterations):
         theta = theta - alpha * linear_regression_gradient(x_train, theta, y_train)
         cost_history[i, 0] = linear_regression_cost_function(x_train, theta, y_train)
         cost_history[i, 1] = linear_regression_cost_function(x_val, theta, y_val)
-        if cost_history[i, 1] > cost_history[i - 1, 1] and i != 0:      #if validation error increases, breaks to avoid overfitting
+        if early_stop and cost_history[i, 1] > cost_history[i - 1, 1] and i != 0:      #if validation error increases, breaks to avoid overfitting
             cost_history = cost_history[:i, :]
             break
     return theta, cost_history
@@ -90,5 +89,58 @@ def baldwin_carell_classification():
     print("Performance on validation set: " + str(calculate_performance(validation, theta, validation_labels)))
     print("Performance on test set: " + str(calculate_performance(test, theta, test_labels)))
 
+def gender_classification():
+    labels_pos = np.ones((210, 1))
+    labels_neg = -1 * np.ones((210, 1))
+    train_labels = np.concatenate((labels_pos, labels_neg), axis = 0)
+    
+    labels_pos = np.ones((30, 1))
+    labels_neg = -1 * np.ones((30, 1))
+    validation_labels = np.concatenate((labels_pos, labels_neg), axis = 0)
+    test_labels = np.concatenate((labels_pos, labels_neg), axis = 0)
+
+    act = ['Lorraine Bracco', 'Peri Gilpin', 'Angie Harmon', 'Alec Baldwin', 'Bill Hader', 'Steve Carell']
+    alt = ['America Ferrera', 'Fran Drescher', 'Kristin Chenoweth', 'Daniel Radcliffe', 'Michael Vartan', 'Gerard Butler']
+
+    train = np.zeros((420, 1025))
+    validation = np.zeros((60, 1025))
+    test = np.zeros((60, 1025))
+
+    for i in range(len(act)):
+        get_data_in_dir("./data/organized/" + act[i] + "/train/", train[70 * i:70 * (i + 1),:])
+        get_data_in_dir("./data/organized/" + act[i] + "/validation/", validation[10 * i:10 * (i + 1),:])
+        get_data_in_dir("./data/organized/" + alt[i] + "/test/", test[10 * i:10 * (i + 1),:])
+
+    theta = np.zeros((1025, 1))
+
+    sizes = [10, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420]
+    train_performance = []
+    validation_performance = []
+    test_performance = []
+    for i in sizes:
+        print i
+        np.random.seed(i)
+        np.random.shuffle(train)
+        np.random.seed(i)
+        np.random.shuffle(train_labels)
+
+        theta = np.zeros((1025, 1))
+        theta, cost = gradient_descent(train[:i,:], train_labels[:i,:], validation, validation_labels, theta, early_stop = False)
+
+        train_performance.append(calculate_performance(train[:i,:], theta, train_labels[:i,:]))
+        validation_performance.append(calculate_performance(validation, theta, validation_labels))
+        test_performance.append(calculate_performance(test, theta, test_labels))
+
+    plt.plot(sizes, train_performance, label="Train")
+    plt.plot(sizes, validation_performance, label="Validation")
+    plt.plot(sizes, test_performance, label="New Actors")
+    plt.xlabel('Training Set Size')
+    plt.ylabel('Classifier Accuracy')
+    plt.legend(loc='lower right')
+    plt.show()
+    
+
+
 if __name__ == "__main__":
-    baldwin_carell_classification()
+    #baldwin_carell_classification()
+    gender_classification()
