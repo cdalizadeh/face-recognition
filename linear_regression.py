@@ -125,7 +125,7 @@ def gender_classification():
         np.random.shuffle(train_labels)
 
         theta = np.zeros((1025, 1))
-        theta, cost = gradient_descent(train[:i,:], train_labels[:i,:], validation, validation_labels, theta, early_stop = False)
+        theta, cost = gradient_descent(train[:i,:], train_labels[:i,:], validation, validation_labels, theta)
 
         train_performance.append(calculate_performance(train[:i,:], theta, train_labels[:i,:]))
         validation_performance.append(calculate_performance(validation, theta, validation_labels))
